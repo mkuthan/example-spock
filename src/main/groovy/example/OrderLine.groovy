@@ -1,8 +1,6 @@
 package example
 
-import groovy.transform.Canonical
-
-@Canonical
+@Entity
 class OrderLine {
   ProductId productId
   Integer quantity

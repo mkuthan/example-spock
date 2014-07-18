@@ -43,7 +43,9 @@ class ObjectMother {
       case Double:
         return 1
       case String:
-        return field.name
+        return "any $field.name"
+      case BigDecimal:
+        return BigDecimal.ZERO
       default:
         return field.type.newInstance().populate()
     }

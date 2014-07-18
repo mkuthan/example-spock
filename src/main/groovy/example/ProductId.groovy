@@ -1,8 +1,12 @@
 package example
 
-import groovy.transform.Canonical
-
-@Canonical
+@ValueObject
 class ProductId {
+
   String id
+
+  @Override
+  String toString() {
+    id
+  }
 }

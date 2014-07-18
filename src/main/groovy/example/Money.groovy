@@ -1,9 +1,13 @@
 package example
 
-import groovy.transform.Canonical
-
-@Canonical
+@ValueObject
 class Money {
+
   BigDecimal amount
   String currency
+
+  @Override
+  String toString() {
+    "$amount $currency"
+  }
 }

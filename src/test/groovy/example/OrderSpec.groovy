@@ -1,6 +1,7 @@
 package example
 
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.mop.Use
 
 class OrderSpec extends Specification {
@@ -48,6 +49,22 @@ class OrderSpec extends Specification {
   }
 
   @Use(ObjectMother)
+  @Unroll
+  def "should not add order line when order status is #status"(OrderStatus status) {
+    given:
+    Order order = new Order(status: status).populate()
+
+    when:
+    order.addLine(new ProductId().populate(), 1, new Money().populate())
+
+    then:
+    thrown(IllegalOrderStatusException)
+
+    where:
+    status << [OrderStatus.OPENED, OrderStatus.CLOSED]
+  }
+
+  @Use(ObjectMother)
   def "should remove existing order line"() {
     given:
     ProductId productId1 = new ProductId(id: "id1")
@@ -66,5 +83,27 @@ class OrderSpec extends Specification {
     then:
     order.lines.every {it.productId != productId2}
   }
+
+  @Use(ObjectMother)
+  @Unroll
+  def "should not remove order line when order status is #status"(OrderStatus status) {
+    given:
+    ProductId productId = new ProductId(id: "id")
+    Integer anyQuantity =  1
+    Money anyUnitPrice = new Money().populate()
+
+    Order order = new Order(status: status).populate()
+    order.addLine(productId, anyQuantity, anyUnitPrice)
+
+    when:
+    order.removeLine(productId)
+
+    then:
+    thrown(IllegalOrderStatusException)
+
+    where:
+    status << [OrderStatus.OPENED, OrderStatus.CLOSED]
+  }
+
 
 }
