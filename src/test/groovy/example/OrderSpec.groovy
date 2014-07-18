@@ -2,60 +2,58 @@ package example
 
 import spock.lang.Specification
 import spock.lang.Unroll
-import spock.util.mop.Use
 
 class OrderSpec extends Specification {
 
-  @Use(ObjectMother)
   def "should open order"() {
     given:
-    Order order = new Order(status: OrderStatus.NEW).populate()
+    def order = new OrderBuilder().newOrder().build()
 
     when:
     order.open()
 
     then:
-    order.status == OrderStatus.OPENED
+    order.getStatus() == OrderStatus.OPENED
   }
 
-  @Use(ObjectMother)
   def "should close order"() {
     given:
-    Order order = new Order(status: OrderStatus.OPENED).populate()
+    def order = new OrderBuilder().openedOrder().build()
 
     when:
     order.close()
 
     then:
-    order.status == OrderStatus.CLOSED
+    order.getStatus() == OrderStatus.CLOSED
   }
 
-  @Use(ObjectMother)
   def "should add new order line to empty order"() {
     given:
-    Order order = new Order(status: OrderStatus.NEW).populate()
+    def newLineProductId = new ProductId("newId")
+    def newLineQuantity = new Quantity(3)
+    def newLineUnitPrice = new Money(10.10, "EUR")
 
-    ProductId newLineProductId = new ProductId("newId")
-    Integer newLineQuantity = 3
-    Money newLineUnitPrice = new Money(amount: 10.10, currency: "EUR")
+    def order = new OrderBuilder()
+        .newOrder()
+        .withLine(new OrderLine(newLineProductId, newLineQuantity, newLineUnitPrice))
+        .build()
 
     when:
     order.addLine(newLineProductId, newLineQuantity, newLineUnitPrice)
 
     then:
-    order.lines.last().productId == newLineProductId
-    order.lines.last().quantity == newLineQuantity
-    order.lines.last().unitPrice == newLineUnitPrice
+    order.getLines().last().getProductId() == newLineProductId
+    order.getLines().last().getQuantity() == newLineQuantity
+    order.getLines().last().getUnitPrice() == newLineUnitPrice
   }
 
-  @Use(ObjectMother)
   @Unroll
   def "should not add order line when order status is #status"(OrderStatus status) {
     given:
-    Order order = new Order(status: status).populate()
+    def order = new OrderBuilder().withStatus(status).build()
 
     when:
-    order.addLine(new ProductId().populate(), 1, new Money().populate())
+    order.addLine(new ProductId("any id"), new Quantity(1), new Money(1.0, "EUR"))
 
     then:
     thrown(IllegalOrderStatusException)
@@ -64,36 +62,33 @@ class OrderSpec extends Specification {
     status << [OrderStatus.OPENED, OrderStatus.CLOSED]
   }
 
-  @Use(ObjectMother)
   def "should remove existing order line"() {
     given:
-    ProductId productId1 = new ProductId(id: "id1")
-    ProductId productId2 = new ProductId(id: "id2")
-    ProductId productId3 = new ProductId(id: "id3")
+    def productId1 = new ProductId("id1")
+    def productId2 = new ProductId("id2")
+    def productId3 = new ProductId("id3")
 
-    OrderLine orderLine1 = new OrderLine(productId: productId1).populate()
-    OrderLine orderLine2 = new OrderLine(productId: productId2).populate()
-    OrderLine orderLine3 = new OrderLine(productId: productId3).populate()
-
-    Order order = new Order(status: OrderStatus.NEW, lines: [orderLine1, orderLine2, orderLine3]).populate()
+    def order = new OrderBuilder()
+        .newOrder()
+        .withDefaultLines([productId1, productId2, productId3])
+        .build()
 
     when:
     order.removeLine(productId2)
 
     then:
-    order.lines.every {it.productId != productId2}
+    order.getLines().every { it.getProductId() != productId2 }
   }
 
-  @Use(ObjectMother)
   @Unroll
   def "should not remove order line when order status is #status"(OrderStatus status) {
     given:
-    ProductId productId = new ProductId(id: "id")
-    Integer anyQuantity =  1
-    Money anyUnitPrice = new Money().populate()
+    def productId = new ProductId("id")
 
-    Order order = new Order(status: status).populate()
-    order.addLine(productId, anyQuantity, anyUnitPrice)
+    def order = new OrderBuilder()
+        .withStatus(status)
+        .withDefaultLine(productId)
+        .build()
 
     when:
     order.removeLine(productId)
@@ -104,6 +99,5 @@ class OrderSpec extends Specification {
     where:
     status << [OrderStatus.OPENED, OrderStatus.CLOSED]
   }
-
 
 }
